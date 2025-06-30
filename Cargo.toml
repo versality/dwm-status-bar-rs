@@ -1,0 +1,16 @@
+[package]
+name = "dwm_bar_rust"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+chrono = "0.4"
+sysinfo = "0.29"
+tracing = "0.1"
+tracing-subscriber = "0.3"
+notify = "6.0"
+notify-debouncer-mini = "0.4"
+anyhow = "1.0"
+clap = { version = "4.5.40", features = ["derive"] }
+regex = "1.11.1"

@@ -264,9 +264,11 @@ async fn cpu_load_monitor() -> Result<String> {
 
 async fn battery_monitor() -> Result<String> {
     // Requires `acpi` to be installed
-    let output = run_command("acpi", &["-b"]).await?;
+    let acpi_output = run_command("acpi", &["-b"]).await?;
+    let charge_threshold_output = run_command("cat", &["/sys/class/power_supply/BAT0/charge_stop_threshold"]).await?;
+
     let re = Regex::new(r"Battery 0: ([\w\s]+), (\d+)%")?;
-    if let Some(caps) = re.captures(&output) {
+    if let Some(caps) = re.captures(&acpi_output) {
         let status = &caps[1];
         let percent = &caps[2];
         let status_char = match status {
@@ -275,7 +277,7 @@ async fn battery_monitor() -> Result<String> {
             "Full" => "F",
             _ => "?",
         };
-        Ok(format!("bat: {}% {}", percent, status_char))
+        Ok(format!("bat: {}/{}% {}", percent, charge_threshold_output, status_char))
     } else {
         Ok("bat: N/A".to_string())
     }

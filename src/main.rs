@@ -33,7 +33,7 @@ use sysinfo::{CpuExt, DiskExt, System, SystemExt};
 use tokio::sync::{broadcast, mpsc};
 
 const MODULE_ORDER: &[&str] = &[
-    "cpu_load", "ram", "disk", "cpu_temp", "gpu_temp", "battery", "volume", "bluetooth", "net", "datetime",
+    "notification", "cpu_load", "ram", "disk", "cpu_temp", "gpu_temp", "battery", "volume", "bluetooth", "net", "datetime",
 ];
 const TRIGGER_DIR: &str = "/tmp/dwm-bar-triggers";
 
@@ -101,6 +101,9 @@ async fn main() {
     }
     if command_exists("bluetoothctl") {
         spawn_monitor("bluetooth", Duration::from_secs(60), bluetooth_monitor, update_tx.clone(), trigger_sub(), args.profile);
+    }
+    if command_exists("dunst") {
+        spawn_monitor("notification", Duration::from_secs(600), notification_monitor, update_tx.clone(), trigger_sub(), args.profile);
     }
 
     tokio::spawn(trigger_listener(trigger_tx));
@@ -306,4 +309,13 @@ async fn volume_monitor() -> Result<String> {
     let cmd = "amixer sget Master | awk -F'[][]' '/Front Left:/ { print $2 }'";
     let volume = run_command("bash", &["-c", cmd]).await?;
     Ok(format!("vol: {}", volume))
+}
+
+async fn notification_monitor() -> Result<String> {
+    let is_paused = run_command("dunstctl", &["is-paused"]).await?;
+    if is_paused.trim() == "true" {
+        Ok("n: disabled".to_string())
+    } else {
+        Ok(String::new())
+    }
 }

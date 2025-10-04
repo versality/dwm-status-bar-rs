@@ -33,7 +33,7 @@ use sysinfo::{CpuExt, DiskExt, System, SystemExt};
 use tokio::sync::{broadcast, mpsc};
 
 const MODULE_ORDER: &[&str] = &[
-    "notification", "cpu_load", "ram", "disk", "cpu_temp", "gpu_temp", "battery", "volume", "bluetooth", "net", "datetime",
+   "vpn", "notification", "cpu_load", "ram", "disk", "cpu_temp", "gpu_temp", "battery", "volume", "bluetooth", "net", "datetime",
 ];
 const TRIGGER_DIR: &str = "/tmp/dwm-bar-triggers";
 
@@ -82,6 +82,7 @@ async fn main() {
     let sys_clone = sys.clone();
     spawn_monitor("ram", Duration::from_secs(5), move || ram_monitor(sys_clone.clone()), update_tx.clone(), trigger_sub(), args.profile);
     spawn_monitor("cpu_load", Duration::from_secs(2), cpu_load_monitor, update_tx.clone(), trigger_sub(), args.profile);
+    spawn_monitor("vpn", Duration::from_secs(10), vpn_monitor, update_tx.clone(), trigger_sub(), args.profile);
 
     // --- Conditional modules (check for dependencies) ---
     if Path::new("/sys/class/thermal/thermal_zone0/temp").exists() {
@@ -254,6 +255,14 @@ async fn gpu_temp_monitor() -> Result<String> {
 
 async fn network_monitor() -> Result<String> {
     run_command("/home/sky/nix-config/bash/network-status.sh", &[]).await
+}
+
+async fn vpn_monitor() -> Result<String> {
+    if Path::new("/sys/class/net/tun0").exists() {
+        Ok("VPN".to_string())
+    } else {
+        Ok(String::new())  // Empty string = hidden from bar
+    }
 }
 
 async fn cpu_load_monitor() -> Result<String> {
